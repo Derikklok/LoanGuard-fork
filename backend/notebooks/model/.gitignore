@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ML Models and data (large files)
+*.pkl
+*.pickle
+*.model
+*.pth
+*.h5
+*.joblib
+*.parquet
+*.csv
+cs-training.csv
+data/
+models/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+venv/
+.venv
+ENV/
+env/
