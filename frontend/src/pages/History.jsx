@@ -19,14 +19,20 @@ export default function History() {
       const { data } = await api.get('/history', {
         params: { skip: (page - 1) * PAGE_SIZE, limit: PAGE_SIZE }
       })
-      setRecords(data.records)
-      setTotal(data.total)
+      setRecords(Array.isArray(data?.records) ? data.records : [])
+    setTotal(typeof data?.total === 'number' ? data.total : 0)
     } catch (err) {
       console.error(err)
     } finally { setLoading(false) }
   }, [page])
 
-  useEffect(() => { fetchHistory() }, [page])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchHistory()
+    }, 0)
+
+    return () => clearTimeout(timer)
+  }, [fetchHistory])
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 

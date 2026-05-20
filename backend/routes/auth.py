@@ -12,6 +12,12 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 load_dotenv(".env")
 SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError(
+        "Missing SECRET_KEY environment variable.\n"
+        "Create a file named backend/.env with at least: SECRET_KEY=your_secure_secret\n"
+        "See backend/.env.example for required variables."
+    )
 ALGORITHM  = "HS256"
 TOKEN_EXP  = 60 * 24   # 24 hours in minutes
 

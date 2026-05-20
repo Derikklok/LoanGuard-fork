@@ -47,7 +47,34 @@ trap cleanup SIGINT SIGTERM
 # Start backend server
 echo "🔵 Starting FastAPI backend..."
 cd "$BACKEND_DIR"
-uv run --project . python -m uvicorn main:app --reload &
+# Try to activate a bash-friendly venv first, then fall back to known venv python executables
+if [ -f "$BACKEND_DIR/.venv/bin/activate" ]; then
+    echo "   Activating backend venv: $BACKEND_DIR/.venv"
+    # shellcheck source=/dev/null
+    . "$BACKEND_DIR/.venv/bin/activate"
+    PY=python
+    echo "   Activated venv; using: $(command -v $PY)"
+elif [ -x "$BACKEND_DIR/.venv/bin/python" ]; then
+    PY="$BACKEND_DIR/.venv/bin/python"
+    echo "   Using virtualenv python: $PY"
+elif [ -x "$BACKEND_DIR/.venv/Scripts/python" ]; then
+    PY="$BACKEND_DIR/.venv/Scripts/python"
+    echo "   Using Windows virtualenv python: $PY"
+elif [ -x "$BACKEND_DIR/.venv/Scripts/python.exe" ]; then
+    PY="$BACKEND_DIR/.venv/Scripts/python.exe"
+    echo "   Using Windows virtualenv python.exe: $PY"
+elif command -v python >/dev/null 2>&1; then
+    PY=python
+    echo "   Using system python: $(command -v python)"
+elif command -v python3 >/dev/null 2>&1; then
+    PY=python3
+    echo "   Using system python3: $(command -v python3)"
+else
+    echo "Python 3 not found. Please install Python or create backend/.venv"
+    exit 1
+fi
+
+$PY -m uvicorn main:app --reload --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 echo "   Backend PID: $BACKEND_PID"
 sleep 2
