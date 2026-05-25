@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # FastAPI Backend with XGBoost
   backend:
@@ -10,13 +8,25 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MONGO_URL=${MONGO_URL:-mongodb://localhost:27017}
+      # MongoDB - use local for dev, Atlas for production
+      - MONGO_URL=${MONGO_URL:-mongodb://admin:password@mongodb:27017/homecredit_db?authSource=admin}
       - DB_NAME=${DB_NAME:-homecredit_db}
       - SECRET_KEY=${SECRET_KEY:-your-super-secret-key-change-in-production}
+      # Python environment
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
     volumes:
-      - ./backend:/app  # For development hot-reload
+      # Mount only source files for hot-reload, preserve venv
+      - ./backend/routes:/app/routes
+      - ./backend/notebooks:/app/notebooks
+      - ./backend/main.py:/app/main.py
+      - ./backend/schemas.py:/app/schemas.py
+      - ./backend/database.py:/app/database.py
+      # Persist model cache if needed
+      - backend_cache:/.cache
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - loanguard-network
     restart: unless-stopped
@@ -36,7 +46,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - loanguard-network
     restart: unless-stopped
@@ -47,9 +58,9 @@ services:
       retries: 3
       start_period: 10s
 
-  # MongoDB (local development - use Atlas in production)
+  # MongoDB - Local development (use Atlas for production)
   mongodb:
-    image: mongo:7.0-alpine
+    image: mongo:latest
     container_name: loanguard-mongodb
     ports:
       - "27017:27017"
@@ -58,8 +69,12 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
       MONGO_INITDB_DATABASE: homecredit_db
     volumes:
+      # Persistent data storage
       - mongodb_data:/data/db
+      # Persistent config storage
       - mongodb_config:/data/configdb
+      # Optional: Initialize with seed script
+      # - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
     networks:
       - loanguard-network
     restart: unless-stopped
@@ -68,11 +83,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
 networks:
   loanguard-network:
     driver: bridge
 
 volumes:
+  # MongoDB persistent data
   mongodb_data:
+    driver: local
+  # MongoDB persistent config
   mongodb_config:
+    driver: local
+  # Backend cache for model artifacts
+  backend_cache:
+    driver: local

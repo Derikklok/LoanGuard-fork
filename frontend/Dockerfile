@@ -22,8 +22,21 @@ RUN npm run build
 # Stage 2: Runtime (nginx)
 FROM nginx:alpine
 
-# Copy nginx config for SPA routing
-RUN echo 'server {\n  listen 80;\n  location / {\n    root /usr/share/nginx/html;\n    try_files $uri $uri/ /index.html;\n  }\n  location /api/ {\n    proxy_pass http://backend:8000;\n  }\n}' > /etc/nginx/conf.d/default.conf
+# Copy nginx config for SPA routing with proper formatting
+RUN cat > /etc/nginx/conf.d/default.conf <<EOF
+server {
+  listen 80;
+  
+  location / {
+    root /usr/share/nginx/html;
+    try_files \$uri \$uri/ /index.html;
+  }
+  
+  location /api/ {
+    proxy_pass http://backend:8000;
+  }
+}
+EOF
 
 # Copy built app from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
